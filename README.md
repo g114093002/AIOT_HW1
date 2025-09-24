@@ -18,6 +18,9 @@ This project follows the **CRISP-DM (Cross-Industry Standard Process for Data Mi
 
 ---
 
+## Demo Site
+The application is deployed on Streamlit Cloud and can be accessed here:https://g114093002-aiot-hw1-app-znfwhi.streamlit.app/
+
 ## 🛠️ Installation
 
 To run this application locally, you'll need Python 3.x installed.
