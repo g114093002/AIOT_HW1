@@ -20,7 +20,7 @@ st.sidebar.markdown("""
 2.  **Data Understanding**: We generate data based on a linear equation with noise.
 3.  **Data Preparation**: You set the parameters for data generation below.
 4.  **Modeling**: We use `scikit-learn` to fit a linear model.
-5.  **Evaluation**: The model is evaluated visually by the plot.
+5.  **Evaluation**: The model is evaluated visually by the plot and by identifying outliers.
 6.  **Deployment**: This Streamlit app is the deployment.
 """)
 
@@ -31,7 +31,7 @@ st.sidebar.header("Adjust Data Parameters")
 # Allow user to modify parameters
 a_param = st.sidebar.slider("Slope (a) of the line", -10.0, 10.0, 2.5, 0.1)
 noise_param = st.sidebar.slider("Noise", 0.0, 50.0, 10.0, 1.0)
-num_points_param = st.sidebar.slider("Number of points", 5, 500, 100, 5)
+num_points_param = st.sidebar.slider("Number of points", 10, 500, 100, 5)
 b_param = 5 # Intercept b is fixed for simplicity
 
 # --- Data Generation ---
@@ -55,6 +55,15 @@ y_pred = model.predict(X)
 a_fit = model.coef_[0]
 b_fit = model.intercept_
 
+# --- Outlier Detection ---
+residuals = y - y_pred.flatten()
+df['residual'] = residuals
+df['abs_residual'] = np.abs(residuals)
+
+# Get the indices of the top 5 outliers
+outlier_indices = df.nlargest(5, 'abs_residual').index
+top_5_outliers = df.loc[outlier_indices]
+
 
 # --- Evaluation & Visualization ---
 st.header("Results")
@@ -63,11 +72,15 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("Data and Regression Line")
     fig, ax = plt.subplots()
-    ax.scatter(X, y, label='Generated Data')
-    ax.plot(X, y_pred, color='red', linewidth=2, label='Regression Line')
+    # Plot all data points
+    ax.scatter(df['X'], df['y'], alpha=0.7, label='Data Points')
+    # Plot the regression line
+    ax.plot(X, y_pred, color='orange', linewidth=2, label='Regression Line')
+    # Highlight the outliers
+    ax.scatter(top_5_outliers['X'], top_5_outliers['y'], color='red', s=60, label='Top 5 Outliers', zorder=5, edgecolors='black')
     ax.set_xlabel("X")
     ax.set_ylabel("y")
-    ax.set_title("Linear Regression Fit")
+    ax.set_title("Linear Regression Fit with Outliers")
     ax.legend()
     st.pyplot(fig)
 
@@ -82,5 +95,10 @@ with col2:
     st.write("The plot on the left shows the generated data points and the red line is the result of the linear regression model. You can see how well the model was able to estimate the original parameters.")
     st.write("Try changing the parameters in the sidebar to see how the model adapts!")
 
+# --- Display Outliers ---
+st.header("Top 5 Outliers")
+st.write("Outliers are the points with the largest vertical distance (residual) from the regression line.")
+st.dataframe(top_5_outliers[['X', 'y', 'residual']].style.format({'X': '{:.2f}', 'y': '{:.2f}', 'residual': '{:.2f}'}))
+
 st.header("Generated Data")
-st.write(df)
+st.write(df[['X', 'y']].style.format('{:.2f}'))
